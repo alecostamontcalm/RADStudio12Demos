@@ -19,24 +19,3 @@ jobs:
         run: |
           chmod +x .github/tools/cleanup-generated.sh
           .github/tools/cleanup-generated.sh
-name: Propose removal of generated binaries
-
-on:
-  workflow_dispatch: {}
-
-jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Run cleanup shell script
-        run: |
-          chmod +x .github/tools/cleanup-generated.sh
-          .github/tools/cleanup-generated.sh
