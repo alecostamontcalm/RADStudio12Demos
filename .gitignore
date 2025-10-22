@@ -66,3 +66,11 @@ __astcache/
 
 # Boss dependency manager vendor folder https://github.com/HashLoad/boss
 modules/
+
+# Ignore build outputs in Debug folders (executables and DCU)
+# Ignore Debug executables (Win32/Win64 and nested Debug folders)
+**/Debug/*.exe
+**/*/Debug/*.exe
+# Ignore Debug DCU files (Delphi compiled units)
+**/Debug/*.dcu
+**/*/Debug/*.dcu
