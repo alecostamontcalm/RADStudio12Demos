@@ -36,66 +36,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run cleanup script
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Add and run cleanup tool
+      - name: Run cleanup shell script
         run: |
-          mkdir -p tools
-          cat > tools/cleanup-generated.js <<'NODE'
-const { execSync } = require('child_process');
-const fs = require('fs');
-
-function run(cmd){ console.log('>',cmd); return execSync(cmd,{stdio:'inherit'}); }
-
-// Patterns to consider generated
-const patterns = ['**/Debug/*.exe','**/*/Debug/*.exe','**/Debug/*.dcu','**/*/Debug/*.dcu','**/Debug/*.res','**/*/Debug/*.res','*.dcu','*.res','*.exe'];
-
-// Find tracked files matching patterns using git ls-files and simple globs
-const { globSync } = require('glob');
-
-let trackedToRemove = new Set();
-for(const p of patterns){
-  const files = globSync(p, { nodir: true, dot: true });
-  for(const f of files){
-    // check if tracked
-    try{
-      execSync(`git ls-files --error-unmatch "${f}"`, { stdio: 'ignore' });
-      trackedToRemove.add(f);
-    }catch(e){ /* not tracked */ }
-  }
-}
-
-if(trackedToRemove.size===0){
-  console.log('No tracked generated files found. Nothing to do.');
-  process.exit(0);
-}
-
-const branch = `cleanup/generated-files-${Date.now()}`;
-run(`git checkout -b ${branch}`);
-
-// Update .gitignore: add generic entries if missing
-const gitignorePath = '.gitignore';
-let gi = fs.existsSync(gitignorePath) ? fs.readFileSync(gitignorePath,'utf8') : '';
-const additions = ["# Auto-ignore generated build outputs","**/Debug/*.exe","**/*/Debug/*.exe","**/Debug/*.dcu","**/*/Debug/*.dcu","**/Debug/*.res","**/*/Debug/*.res"];
-let changed=false;
-for(const a of additions){ if(!gi.includes(a)){ gi += (gi.endsWith('\n')? '':'\n') + a + '\n'; changed=true; } }
-if(changed){ fs.writeFileSync(gitignorePath,gi); run('git add .gitignore'); }
-
-// Remove tracked files from index
-for(const f of trackedToRemove){ run(`git rm --cached -r -- "${f}" || true`); }
-
-run('git add -u');
-run('git commit -m "Propose removal of generated binaries and update .gitignore" || echo "Nothing to commit");
-run(`git push origin ${branch}`);
-
-// Create PR using GitHub CLI if available, else fallback to GitHub API via gh
-try{
-  run(`gh pr create --title "chore: remove generated binaries" --body "This PR removes tracked generated build artifacts and updates .gitignore." --base main --head ${branch}`);
-}catch(e){
-  console.log('gh CLI not available, PR may be created by Actions API.');
-}
-NODE
-          node tools/cleanup-generated.js
+          chmod +x .github/tools/cleanup-generated.sh
+          .github/tools/cleanup-generated.sh
